@@ -6,7 +6,11 @@ const piazzole = [
   { numero: 3, posizione_x: 250, posizione_y: 50, tipo: 'standard' },
   { numero: 4, posizione_x: 350, posizione_y: 50, tipo: 'standard' },
   { numero: 5, posizione_x: 50, posizione_y: 150, tipo: 'standard' },
-  { numero: 6, posizione_x: 150, posizione_y: 150, tipo: 'standard' }
+  { numero: 6, posizione_x: 150, posizione_y: 150, tipo: 'standard' },
+  { numero: 7, posizione_x: 250, posizione_y: 150, tipo: 'standard' },
+  { numero: 8, posizione_x: 350, posizione_y: 150, tipo: 'standard' },
+  { numero: 9, posizione_x: 50, posizione_y: 250, tipo: 'standard' },
+  { numero: 10, posizione_x: 150, posizione_y: 250, tipo: 'standard' }
 ];
 
 piazzole.forEach((p, index) => {
