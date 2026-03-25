@@ -1,0 +1,59 @@
+{
+  "name": "gestionale-agricampeggio-monaci",
+  "version": "1.0.0",
+  "description": "Gestionale prenotazioni per Agricampeggio Monaci",
+  "main": "electron/main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev:backend": "cd backend && node server.js",
+    "dev:frontend": "cd frontend && npm start",
+    "build:frontend": "cd frontend && npm run build",
+    "build": "npm run build:frontend && electron-builder --win"
+  },
+  "build": {
+    "appId": "it.agricampeggiomonaci.gestionale",
+    "productName": "Gestionale Monaci",
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "target": "nsis",
+      "icon": "electron/assets/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Gestionale Monaci"
+    },
+    "files": [
+      "electron/**/*"
+    ],
+    "extraResources": [
+      {
+        "from": "frontend/build",
+        "to": "frontend/build"
+      },
+      {
+        "from": "backend",
+        "to": "backend",
+        "filter": [
+          "**/*",
+          "!node_modules/**"
+        ]
+      },
+      {
+        "from": "backend/node_modules",
+        "to": "backend/node_modules"
+      }
+    ]
+  },
+  "devDependencies": {
+    "electron": "^33.0.0",
+    "electron-builder": "^25.0.0"
+  },
+  "dependencies": {
+    "dotenv": "^17.3.1"
+  }
+}

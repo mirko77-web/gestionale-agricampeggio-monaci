@@ -1,0 +1,14 @@
+{
+  "files": {
+    "main.css": "./static/css/main.2732ce85.css",
+    "main.js": "./static/js/main.5b613ff3.js",
+    "static/media/Agricampeggio.png": "./static/media/Agricampeggio.de7086cfcc6f102b0f62.png",
+    "index.html": "./index.html",
+    "main.2732ce85.css.map": "./static/css/main.2732ce85.css.map",
+    "main.5b613ff3.js.map": "./static/js/main.5b613ff3.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.2732ce85.css",
+    "static/js/main.5b613ff3.js"
+  ]
+}

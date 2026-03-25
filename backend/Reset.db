@@ -1,0 +1,7 @@
+const db = require('./src/db/database');
+
+setTimeout(() => {
+  console.log('✅ Database ricreato con tutte le tabelle!');
+  db.close();
+  process.exit();
+}, 2000);
