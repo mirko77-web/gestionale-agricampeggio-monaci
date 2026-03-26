@@ -1,7 +1,7 @@
-import React, { useState, useCallback } from 'react';
-import MapPiazzole from './components/MapPiazzole';
-import MappaInterattiva from './components/MappaInterattiva';
+import React, { useState } from 'react';
+import CalendarioPrenotazioni from './components/CalendarioPrenotazioni';
 import FormPrenotazione from './components/FormPrenotazione';
+import MapPiazzole from './components/MapPiazzole';
 import logo from './Agricampeggio.png';
 import './App.css';
 
@@ -13,6 +13,7 @@ function App() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [refreshMap, setRefreshMap] = useState(0);
+  const [vistaAttiva, setVistaAttiva] = useState('piazzole');
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -34,11 +35,11 @@ function App() {
     }
   };
 
-  const handlePiazzolaClick = useCallback((piazzola, prenotazione, stato) => {
+  const handlePiazzolaClick = (piazzola, prenotazione, stato) => {
     setSelectedPiazzola(piazzola);
     setSelectedPrenotazione(prenotazione);
     setSelectedStato(stato);
-  }, []);
+  };
 
   const handleSave = () => {
     setSelectedPiazzola(null);
@@ -60,17 +61,13 @@ function App() {
           <img src={logo} alt="Agricampeggio Monaci" style={{ width: '190px', marginBottom: '16px' }} />
           <h2 style={{ marginBottom: '24px', color: '#1f2937' }}>Gestionale Monaci</h2>
           <input
-            type="text"
-            placeholder="Username"
-            value={username}
+            type="text" placeholder="Username" value={username}
             onChange={(e) => setUsername(e.target.value)}
             style={{ width: '100%', padding: '10px', marginBottom: '12px', borderRadius: '6px', border: '1px solid #d1d5db', boxSizing: 'border-box' }}
             required
           />
           <input
-            type="password"
-            placeholder="Password"
-            value={password}
+            type="password" placeholder="Password" value={password}
             onChange={(e) => setPassword(e.target.value)}
             style={{ width: '100%', padding: '10px', marginBottom: '16px', borderRadius: '6px', border: '1px solid #d1d5db', boxSizing: 'border-box' }}
             required
@@ -85,7 +82,7 @@ function App() {
 
   return (
     <div style={{ padding: '20px', background: '#f3f4f6', minHeight: '100vh' }}>
-      
+
       {/* Header */}
       <header style={{ background: '#1f2937', color: 'white', padding: '16px 24px', borderRadius: '8px', marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
@@ -95,36 +92,66 @@ function App() {
             <p style={{ margin: '2px 0 0', opacity: 0.7, fontSize: '13px' }}>Gestione prenotazioni camper</p>
           </div>
         </div>
-        <button onClick={() => { localStorage.removeItem('token'); setIsLoggedIn(false); }} style={{ padding: '10px 20px', background: '#ef4444', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>
+        <button
+          onClick={() => { localStorage.removeItem('token'); setIsLoggedIn(false); }}
+          style={{ padding: '10px 20px', background: '#ef4444', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}
+        >
           Logout
         </button>
       </header>
 
-      {/* Griglia piazzole + form */}
-      <div style={{ display: 'grid', gridTemplateColumns: selectedPiazzola ? '2fr 1fr' : '1fr', gap: '20px', marginBottom: '20px' }}>
-        <div>
-          <h2 style={{ marginBottom: '12px' }}>Piazzole</h2>
-          <MapPiazzole onPiazzoleClick={handlePiazzolaClick} refresh={refreshMap} />
-        </div>
-
-        {selectedPiazzola && (
-          <div>
-            <h2 style={{ marginBottom: '12px' }}>
-              {selectedStato === 'libera' ? '➕ Nuova prenotazione' : '📋 Dettaglio prenotazione'}
-            </h2>
-            <FormPrenotazione
-              piazzola={selectedPiazzola}
-              prenotazioneEsistente={selectedPrenotazione}
-              stato={selectedStato}
-              onSave={handleSave}
-              onClose={handleClose}
-            />
-          </div>
-        )}
+      {/* Tab di navigazione */}
+      <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
+        {[
+          { id: 'piazzole', label: '🏕️ Piazzole' },
+          { id: 'calendario', label: '📅 Calendario' },
+        ].map(tab => (
+          <button
+            key={tab.id}
+            onClick={() => { setVistaAttiva(tab.id); handleClose(); }}
+            style={{
+              padding: '10px 24px', borderRadius: '8px', border: 'none', cursor: 'pointer',
+              fontWeight: 700, fontSize: 15,
+              background: vistaAttiva === tab.id ? '#1f2937' : 'white',
+              color: vistaAttiva === tab.id ? 'white' : '#374151',
+              boxShadow: vistaAttiva === tab.id ? '0 2px 8px rgba(0,0,0,0.2)' : '0 1px 3px rgba(0,0,0,0.1)',
+              transition: 'all 0.2s',
+            }}
+          >
+            {tab.label}
+          </button>
+        ))}
       </div>
 
-      {/* Mappa interattiva */}
-      <MappaInterattiva onPiazzolaClick={handlePiazzolaClick} refresh={refreshMap} />
+      {/* Vista Piazzole */}
+      {vistaAttiva === 'piazzole' && (
+        <div style={{ display: 'grid', gridTemplateColumns: selectedPiazzola ? '2fr 1fr' : '1fr', gap: '20px' }}>
+          <div>
+            <h2 style={{ marginBottom: '12px' }}>Piazzole</h2>
+            <MapPiazzole onPiazzoleClick={handlePiazzolaClick} refresh={refreshMap} />
+          </div>
+
+          {selectedPiazzola && (
+            <div>
+              <h2 style={{ marginBottom: '12px' }}>
+                {selectedStato === 'libera' ? '➕ Nuova prenotazione' : '📋 Dettaglio prenotazione'}
+              </h2>
+              <FormPrenotazione
+                piazzola={selectedPiazzola}
+                prenotazioneEsistente={selectedPrenotazione}
+                stato={selectedStato}
+                onSave={handleSave}
+                onClose={handleClose}
+              />
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Vista Calendario */}
+      {vistaAttiva === 'calendario' && (
+        <CalendarioPrenotazioni key={refreshMap} />
+      )}
 
     </div>
   );
