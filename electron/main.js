@@ -1,8 +1,22 @@
-require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
-const { app, BrowserWindow, dialog } = require('electron');
 const path = require('path');
+const fs = require('fs');
+const { app, BrowserWindow, dialog } = require('electron');
 const { fork } = require('child_process');
 
+// Leggi il .env manualmente
+const envPath = path.join(__dirname, '..', '.env');
+const envVars = {};
+if (fs.existsSync(envPath)) {
+  fs.readFileSync(envPath, 'utf8')
+    .split('\n')
+    .forEach(line => {
+      const [key, ...rest] = line.split('=');
+      if (key && rest.length) {
+        envVars[key.trim()] = rest.join('=').trim();
+      }
+    });
+}
+console.log('[Electron] JWT_SECRET caricato:', !!envVars.JWT_SECRET);
 
 let mainWindow;
 let backendProcess;
@@ -13,21 +27,15 @@ function startBackend() {
     : path.join(__dirname, '..', 'backend', 'server.js');
 
   console.log('[Electron] Backend path:', backendPath);
-
 backendProcess = fork(backendPath, [], {
-    env: {
-      ...process.env,
-      PORT: '5000',
-      DB_PATH: path.join(app.getPath('userData'), 'campeggio.db'),
-      JWT_SECRET: process.env.JWT_SECRET,
-      EMAIL_USER: process.env.EMAIL_USER,
-      EMAIL_PASS: process.env.EMAIL_PASS,
-      TWILIO_ACCOUNT_SID: process.env.TWILIO_ACCOUNT_SID,
-      TWILIO_AUTH_TOKEN: process.env.TWILIO_AUTH_TOKEN,
-      TWILIO_WHATSAPP_FROM: process.env.TWILIO_WHATSAPP_FROM,
-    },
-    stdio: 'pipe',
-  });
+  env: {
+    ...process.env,
+    ...envVars,  // ← variabili lette direttamente dal file
+    PORT: '5000',
+    DB_PATH: path.join(app.getPath('userData'), 'campeggio.db'),
+  },
+  stdio: 'pipe',
+});
 
   backendProcess.stdout?.on('data', (data) => {
     console.log('[Backend]', data.toString());

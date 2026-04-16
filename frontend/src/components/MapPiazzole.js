@@ -7,11 +7,11 @@ const MapPiazzole = ({ onPiazzoleClick, refresh }) => {
 
   const caricaDati = useCallback(async () => {
     try {
-      const token = localStorage.getItem('token');
       const [resPiazzole, resPrenotazioni] = await Promise.all([
-        axios.get('http://localhost:5000/api/piazzole', { headers: { Authorization: `Bearer ${token}` } }),
-        axios.get('http://localhost:5000/api/prenotazioni', { headers: { Authorization: `Bearer ${token}` } })
+        axios.get('http://localhost:5000/api/piazzole'),
+        axios.get('http://localhost:5000/api/prenotazioni')
       ]);
+
       const ordinate = (resPiazzole.data || []).sort((a, b) => a.numero - b.numero);
       setPiazzole(ordinate);
       setPrenotazioni(resPrenotazioni.data || []);
@@ -24,19 +24,18 @@ const MapPiazzole = ({ onPiazzoleClick, refresh }) => {
     caricaDati();
   }, [caricaDati, refresh]);
 
-  const getPrenotazioneAttiva = (piazzolaId) => {
+  // 🔥 Stato della piazzola basato SOLO sulla prenotazione attiva oggi
+  const getStato = (piazzolaId) => {
     const oggi = new Date().toISOString().split('T')[0];
-    return prenotazioni.find(p =>
+
+    const attiva = prenotazioni.find(p =>
       p.piazzola_id === piazzolaId &&
       p.data_arrivo <= oggi &&
       p.data_partenza >= oggi
     );
-  };
 
-  const getStato = (piazzolaId) => {
-    const p = getPrenotazioneAttiva(piazzolaId);
-    if (!p) return 'libera';
-    if (p.pagato === 1 || p.pagato === '1') return 'occupata';
+    if (!attiva) return 'libera';
+    if (attiva.pagato === 1 || attiva.pagato === '1') return 'occupata';
     return 'non_pagata';
   };
 
@@ -58,10 +57,12 @@ const MapPiazzole = ({ onPiazzoleClick, refresh }) => {
     }
   };
 
+  // 🔥 QUI LA MODIFICA FONDAMENTALE
   const handleClick = (piazzola) => {
     const stato = getStato(piazzola.id);
-    const prenotazione = getPrenotazioneAttiva(piazzola.id);
-    onPiazzoleClick(piazzola, prenotazione || null, stato);
+
+    // Quando clicchi sulla piazzola → SEMPRE nuova prenotazione
+    onPiazzoleClick(piazzola, null, stato);
   };
 
   const libere = piazzole.filter(p => getStato(p.id) === 'libera').length;
