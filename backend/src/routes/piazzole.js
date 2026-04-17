@@ -1,5 +1,6 @@
 const express = require('express');
-const db = require('../db/database');
+const db = require('../db/database.js');
+
 const router = express.Router();
 
 // GET tutte le piazzole
