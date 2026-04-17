@@ -6,7 +6,6 @@ import logo from './Agricampeggio.png';
 import './App.css';
 
 function App() {
-
   const [selectedPiazzola, setSelectedPiazzola] = useState(null);
   const [selectedPrenotazione, setSelectedPrenotazione] = useState(null);
   const [selectedStato, setSelectedStato] = useState(null);
@@ -17,11 +16,9 @@ function App() {
   const handlePiazzolaClick = (piazzola, prenotazione, stato) => {
     setSelectedPiazzola(piazzola);
 
-    // Se clicchi sulla piazzola libera → nuova prenotazione
     if (stato === 'libera') {
       setSelectedPrenotazione(null);
     } else {
-      // Se clicchi su una prenotazione specifica → modifica
       setSelectedPrenotazione(prenotazione);
     }
 
@@ -64,7 +61,7 @@ function App() {
         </div>
       </header>
 
-      {/* Tab di navigazione */}
+      {/* Tabs */}
       <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
         {[
           { id: 'piazzole', label: '🏕️ Piazzole' },
