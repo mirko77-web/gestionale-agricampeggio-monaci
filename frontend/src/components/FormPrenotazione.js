@@ -17,6 +17,7 @@ const FormPrenotazione = ({ piazzola, prenotazioneEsistente, stato, onSave, onCl
   const isModifica = !!prenotazioneEsistente;
 
   useEffect(() => {
+    const oggi = new Date().toISOString().split("T")[0];
     if (prenotazioneEsistente) {
       setForm({
         nome_cliente: prenotazioneEsistente.nome_cliente || '',
