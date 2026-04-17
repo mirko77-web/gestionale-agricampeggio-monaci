@@ -4,21 +4,21 @@ import axios from 'axios';
 const MapPiazzole = ({ onPiazzoleClick, refresh }) => {
   const [piazzole, setPiazzole] = useState([]);
   const [prenotazioni, setPrenotazioni] = useState([]);
+const caricaDati = useCallback(async () => {
+  try {
+    const [resPiazzole, resPrenotazioni] = await Promise.all([
+      axios.get('https://gestionale-agricampeggio-monaci-production.up.railway.app/api/piazzole'),
+      axios.get('https://gestionale-agricampeggio-monaci-production.up.railway.app/api/prenotazioni')
+    ]);
 
-  const caricaDati = useCallback(async () => {
-    try {
-      const [resPiazzole, resPrenotazioni] = await Promise.all([
-        axios.get('http://localhost:5000/api/piazzole'),
-        axios.get('http://localhost:5000/api/prenotazioni')
-      ]);
+    const ordinate = (resPiazzole.data || []).sort((a, b) => a.numero - b.numero);
+    setPiazzole(ordinate);
+    setPrenotazioni(resPrenotazioni.data || []);
 
-      const ordinate = (resPiazzole.data || []).sort((a, b) => a.numero - b.numero);
-      setPiazzole(ordinate);
-      setPrenotazioni(resPrenotazioni.data || []);
-    } catch (err) {
-      console.error('Errore caricamento:', err);
-    }
-  }, []);
+  } catch (err) {
+    console.error('Errore caricamento:', err);
+  }
+}, []);
 
   useEffect(() => {
     caricaDati();

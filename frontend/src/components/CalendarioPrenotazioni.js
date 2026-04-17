@@ -28,22 +28,23 @@ export default function CalendarioPrenotazioni() {
     fetchPrenotazioni();
   }, []);
 
-  const fetchPrenotazioni = () => {
-    setLoading(true);
-    setErrore(null);
-    fetch('http://localhost:5000/api/prenotazioni', {
-      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+const fetchPrenotazioni = () => {
+  setLoading(true);
+  setErrore(null);
+
+  fetch('https://gestionale-agricampeggio-monaci-production.up.railway.app/api/prenotazioni', {
+    headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+  })
+    .then(r => r.json())
+    .then(data => {
+      setPrenotazioni(Array.isArray(data) ? data : []);
+      setLoading(false);
     })
-      .then(r => r.json())
-      .then(data => {
-        setPrenotazioni(Array.isArray(data) ? data : []);
-        setLoading(false);
-      })
-      .catch(err => {
-        setErrore('Errore caricamento prenotazioni');
-        setLoading(false);
-      });
-  };
+    .catch(err => {
+      setErrore('Errore caricamento prenotazioni');
+      setLoading(false);
+    });
+};
 
   // Converte una data stringa "2026-06-01" in oggetto Date senza problemi di fuso orario
   const toDate = (str) => {
@@ -256,30 +257,39 @@ export default function CalendarioPrenotazioni() {
     </div>
   );
 
-  // ---- ELIMINA PRENOTAZIONE ----
-  const eliminaPrenotazione = async (id) => {
-    if (!window.confirm('Sei sicuro di voler eliminare questa prenotazione?')) return;
-    try {
-      const res = await fetch(`http://localhost:5000/api/prenotazioni/${id}`, {
+// ---- ELIMINA PRENOTAZIONE ----
+const eliminaPrenotazione = async (id) => {
+  if (!window.confirm('Sei sicuro di voler eliminare questa prenotazione?')) return;
+
+  try {
+    const res = await fetch(
+      `https://gestionale-agricampeggio-monaci-production.up.railway.app/api/prenotazioni/${id}`,
+      {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-      });
-      if (res.ok) {
-        setPrenotazioni(prev => prev.filter(p => p.id !== id));
-        // Aggiorna il modale rimuovendo la prenotazione eliminata
-        setPrenotazioneSelezionata(prev => {
-          if (!prev) return null;
-          const aggiornate = prev.prenotazioni.filter(p => p.id !== id);
-          if (aggiornate.length === 0) return null;
-          return { ...prev, prenotazioni: aggiornate };
-        });
-      } else {
-        alert('Errore durante l\'eliminazione');
       }
-    } catch {
-      alert('Errore di connessione');
+    );
+
+    if (res.ok) {
+      setPrenotazioni(prev => prev.filter(p => p.id !== id));
+
+      // Aggiorna il modale rimuovendo la prenotazione eliminata
+      setPrenotazioneSelezionata(prev => {
+        if (!prev) return null;
+        const aggiornate = prev.prenotazioni.filter(p => p.id !== id);
+        if (aggiornate.length === 0) return null;
+        return { ...prev, prenotazioni: aggiornate };
+      });
+
+    } else {
+      alert('Errore durante l\'eliminazione');
     }
-  };
+
+  } catch {
+    alert('Errore di connessione');
+  }
+};
+
 
   // ---- MODALE DETTAGLIO ----
   const renderModale = () => {

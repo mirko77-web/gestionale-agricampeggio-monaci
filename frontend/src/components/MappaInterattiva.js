@@ -6,19 +6,29 @@ const MappaInterattiva = ({ onPiazzolaClick, refresh }) => {
   const [prenotazioni, setPrenotazioni] = useState([]);
   const [tooltip, setTooltip] = useState(null);
 
-  const caricaDati = useCallback(async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const [resPiazzole, resPrenotazioni] = await Promise.all([
-        axios.get('http://localhost:5000/api/piazzole', { headers: { Authorization: `Bearer ${token}` } }),
-        axios.get('http://localhost:5000/api/prenotazioni', { headers: { Authorization: `Bearer ${token}` } })
-      ]);
-      setPiazzole((resPiazzole.data || []).sort((a, b) => a.numero - b.numero));
-      setPrenotazioni(resPrenotazioni.data || []);
-    } catch (err) {
-      console.error('Errore caricamento mappa:', err);
-    }
-  }, []);
+ const caricaDati = useCallback(async () => {
+  try {
+    const token = localStorage.getItem('token');
+
+    const [resPiazzole, resPrenotazioni] = await Promise.all([
+      axios.get(
+        'https://gestionale-agricampeggio-monaci-production.up.railway.app/api/piazzole',
+        { headers: { Authorization: `Bearer ${token}` } }
+      ),
+      axios.get(
+        'https://gestionale-agricampeggio-monaci-production.up.railway.app/api/prenotazioni',
+        { headers: { Authorization: `Bearer ${token}` } }
+      )
+    ]);
+
+    setPiazzole((resPiazzole.data || []).sort((a, b) => a.numero - b.numero));
+    setPrenotazioni(resPrenotazioni.data || []);
+
+  } catch (err) {
+    console.error('Errore caricamento mappa:', err);
+  }
+}, []);
+
 
   useEffect(() => {
     caricaDati();

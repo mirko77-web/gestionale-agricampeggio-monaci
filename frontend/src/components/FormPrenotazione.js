@@ -46,17 +46,20 @@ const FormPrenotazione = ({ piazzola, prenotazioneEsistente, stato, onSave, onCl
         importo: 0
       };
 
-      if (isModifica) {
-        await axios.put(`http://localhost:5000/api/prenotazioni/${prenotazioneEsistente.id}`, dati, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        alert('Prenotazione aggiornata!');
-      } else {
-        await axios.post('http://localhost:5000/api/prenotazioni', dati, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        alert('Prenotazione salvata!');
-      }
+     const API = "https://gestionale-agricampeggio-monaci-production.up.railway.app/api/prenotazioni";
+
+if (isModifica) {
+  await axios.put(`${API}/${prenotazioneEsistente.id}`, dati, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  alert('Prenotazione aggiornata!');
+} else {
+  await axios.post(API, dati, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  alert('Prenotazione salvata!');
+}
+
       onSave();
     } catch (err) {
       alert('Errore nel salvataggio');
@@ -64,19 +67,27 @@ const FormPrenotazione = ({ piazzola, prenotazioneEsistente, stato, onSave, onCl
     }
   };
 
-  const handleElimina = async () => {
-    if (!window.confirm('Sei sicuro di voler eliminare questa prenotazione?')) return;
-    try {
-      const token = localStorage.getItem('token');
-      await axios.delete(`http://localhost:5000/api/prenotazioni/${prenotazioneEsistente.id}`, {
+const handleElimina = async () => {
+  if (!window.confirm('Sei sicuro di voler eliminare questa prenotazione?')) return;
+
+  try {
+    const token = localStorage.getItem('token');
+
+    await axios.delete(
+      `https://gestionale-agricampeggio-monaci-production.up.railway.app/api/prenotazioni/${prenotazioneEsistente.id}`,
+      {
         headers: { Authorization: `Bearer ${token}` }
-      });
-      alert('Prenotazione eliminata!');
-      onSave();
-    } catch (err) {
-      alert('Errore eliminazione');
-    }
-  };
+      }
+    );
+
+    alert('Prenotazione eliminata!');
+    onSave();
+
+  } catch (err) {
+    alert('Errore eliminazione');
+  }
+};
+
 
   const getBorderColor = () => {
     if (stato === 'occupata') return '#ef4444';
