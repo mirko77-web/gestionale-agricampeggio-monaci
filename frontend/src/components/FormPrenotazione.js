@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
+const API_URL = process.env.REACT_APP_API_URL;
+
 const FormPrenotazione = ({ piazzola, prenotazioneEsistente, stato, onSave, onClose }) => {
   const oggi = new Date().toISOString().split('T')[0];
 
@@ -46,19 +48,19 @@ const FormPrenotazione = ({ piazzola, prenotazioneEsistente, stato, onSave, onCl
         importo: 0
       };
 
-     const API = "https://gestionale-agricampeggio-monaci-production.up.railway.app/api/prenotazioni";
+      const API = `${API_URL}/api/prenotazioni`;
 
-if (isModifica) {
-  await axios.put(`${API}/${prenotazioneEsistente.id}`, dati, {
-    headers: { Authorization: `Bearer ${token}` }
-  });
-  alert('Prenotazione aggiornata!');
-} else {
-  await axios.post(API, dati, {
-    headers: { Authorization: `Bearer ${token}` }
-  });
-  alert('Prenotazione salvata!');
-}
+      if (isModifica) {
+        await axios.put(`${API}/${prenotazioneEsistente.id}`, dati, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        alert('Prenotazione aggiornata!');
+      } else {
+        await axios.post(API, dati, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        alert('Prenotazione salvata!');
+      }
 
       onSave();
     } catch (err) {
@@ -67,27 +69,26 @@ if (isModifica) {
     }
   };
 
-const handleElimina = async () => {
-  if (!window.confirm('Sei sicuro di voler eliminare questa prenotazione?')) return;
+  const handleElimina = async () => {
+    if (!window.confirm('Sei sicuro di voler eliminare questa prenotazione?')) return;
 
-  try {
-    const token = localStorage.getItem('token');
+    try {
+      const token = localStorage.getItem('token');
 
-    await axios.delete(
-      `https://gestionale-agricampeggio-monaci-production.up.railway.app/api/prenotazioni/${prenotazioneEsistente.id}`,
-      {
-        headers: { Authorization: `Bearer ${token}` }
-      }
-    );
+      await axios.delete(
+        `${API_URL}/api/prenotazioni/${prenotazioneEsistente.id}`,
+        {
+          headers: { Authorization: `Bearer ${token}` }
+        }
+      );
 
-    alert('Prenotazione eliminata!');
-    onSave();
+      alert('Prenotazione eliminata!');
+      onSave();
 
-  } catch (err) {
-    alert('Errore eliminazione');
-  }
-};
-
+    } catch (err) {
+      alert('Errore eliminazione');
+    }
+  };
 
   const getBorderColor = () => {
     if (stato === 'occupata') return '#ef4444';
@@ -97,8 +98,6 @@ const handleElimina = async () => {
 
   return (
     <div style={{ padding: '20px', background: 'white', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', borderTop: `4px solid ${getBorderColor()}` }}>
-
-      {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
         <h3 style={{ margin: 0 }}>
           {isModifica ? `✏️ Piazzola #${piazzola.numero}` : `➕ Nuova prenotazione #${piazzola.numero}`}
@@ -160,7 +159,6 @@ const handleElimina = async () => {
           </div>
         </div>
 
-        {/* Checkbox pagato */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px', padding: '10px', background: form.pagato ? '#dcfce7' : '#fef3c7', borderRadius: '6px' }}>
           <input
             type="checkbox"
@@ -182,7 +180,6 @@ const handleElimina = async () => {
           style={{ ...inputStyle, minHeight: '60px', resize: 'vertical' }}
         />
 
-        {/* Bottoni */}
         <button type="submit" style={{ width: '100%', padding: '12px', background: isModifica ? '#f59e0b' : '#3b82f6', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', marginBottom: '8px', fontSize: '15px' }}>
           {isModifica ? '💾 Aggiorna prenotazione' : '✅ Salva prenotazione'}
         </button>

@@ -1,34 +1,32 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 
+const API_URL = process.env.REACT_APP_API_URL;
+
 const MappaInterattiva = ({ onPiazzolaClick, refresh }) => {
   const [piazzole, setPiazzole] = useState([]);
   const [prenotazioni, setPrenotazioni] = useState([]);
   const [tooltip, setTooltip] = useState(null);
 
- const caricaDati = useCallback(async () => {
-  try {
-    const token = localStorage.getItem('token');
+  const caricaDati = useCallback(async () => {
+    try {
+      const token = localStorage.getItem('token');
 
-    const [resPiazzole, resPrenotazioni] = await Promise.all([
-      axios.get(
-        'https://gestionale-agricampeggio-monaci-production.up.railway.app/api/piazzole',
-        { headers: { Authorization: `Bearer ${token}` } }
-      ),
-      axios.get(
-        'https://gestionale-agricampeggio-monaci-production.up.railway.app/api/prenotazioni',
-        { headers: { Authorization: `Bearer ${token}` } }
-      )
-    ]);
+      const [resPiazzole, resPrenotazioni] = await Promise.all([
+        axios.get(`${API_URL}/api/piazzole`, {
+          headers: { Authorization: `Bearer ${token}` }
+        }),
+        axios.get(`${API_URL}/api/prenotazioni`, {
+          headers: { Authorization: `Bearer ${token}` }
+        })
+      ]);
 
-    setPiazzole((resPiazzole.data || []).sort((a, b) => a.numero - b.numero));
-    setPrenotazioni(resPrenotazioni.data || []);
-
-  } catch (err) {
-    console.error('Errore caricamento mappa:', err);
-  }
-}, []);
-
+      setPiazzole((resPiazzole.data || []).sort((a, b) => a.numero - b.numero));
+      setPrenotazioni(resPrenotazioni.data || []);
+    } catch (err) {
+      console.error('Errore caricamento mappa:', err);
+    }
+  }, []);
 
   useEffect(() => {
     caricaDati();
@@ -59,7 +57,6 @@ const MappaInterattiva = ({ onPiazzolaClick, refresh }) => {
     }
   };
 
-  // Piazzole 1-10 a sinistra, 11-20 a destra
   const piazzoleSinistra = piazzole.filter(p => p.numero >= 1 && p.numero <= 10);
   const piazzoleDestra = piazzole.filter(p => p.numero >= 11 && p.numero <= 20);
 
@@ -116,7 +113,6 @@ const MappaInterattiva = ({ onPiazzolaClick, refresh }) => {
     <div style={{ background: 'white', borderRadius: '12px', padding: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', position: 'relative' }}>
       <h3 style={{ margin: '0 0 20px', color: '#1f2937' }}>🗺️ Mappa Campeggio</h3>
 
-      {/* Legenda */}
       <div style={{ display: 'flex', gap: '16px', marginBottom: '20px', flexWrap: 'wrap', fontSize: '13px' }}>
         {[['#22c55e', 'Libera'], ['#ef4444', 'Occupata (pagata)'], ['#3b82f6', 'Non pagata']].map(([col, label]) => (
           <div key={label} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -126,7 +122,6 @@ const MappaInterattiva = ({ onPiazzolaClick, refresh }) => {
         ))}
       </div>
 
-      {/* Mappa */}
       <div style={{
         background: '#d1fae5',
         borderRadius: '12px',
@@ -135,16 +130,11 @@ const MappaInterattiva = ({ onPiazzolaClick, refresh }) => {
         position: 'relative',
         minHeight: '420px'
       }}>
-
-        {/* Etichetta ingresso */}
         <div style={{ textAlign: 'center', marginBottom: '12px', color: '#065f46', fontWeight: 'bold', fontSize: '13px' }}>
           🚗 INGRESSO
         </div>
 
-        {/* Area principale */}
         <div style={{ display: 'flex', gap: '20px', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-
-          {/* Colonna sinistra - piazzole 1-10 */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', flex: 1 }}>
             <div style={{ textAlign: 'center', fontSize: '12px', color: '#065f46', fontWeight: 'bold', marginBottom: '4px' }}>
               FILA SINISTRA
@@ -152,7 +142,6 @@ const MappaInterattiva = ({ onPiazzolaClick, refresh }) => {
             {piazzoleSinistra.map(p => <PiazzolaBox key={p.id} piazzola={p} />)}
           </div>
 
-          {/* Strada centrale */}
           <div style={{
             display: 'flex',
             flexDirection: 'column',
@@ -179,7 +168,6 @@ const MappaInterattiva = ({ onPiazzolaClick, refresh }) => {
             </div>
           </div>
 
-          {/* Colonna destra - piazzole 11-20 */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', flex: 1 }}>
             <div style={{ textAlign: 'center', fontSize: '12px', color: '#065f46', fontWeight: 'bold', marginBottom: '4px' }}>
               FILA DESTRA
@@ -188,7 +176,6 @@ const MappaInterattiva = ({ onPiazzolaClick, refresh }) => {
           </div>
         </div>
 
-        {/* Servizi */}
         <div style={{ marginTop: '16px', display: 'flex', justifyContent: 'center', gap: '16px', flexWrap: 'wrap' }}>
           <div style={{ background: '#bfdbfe', padding: '8px 16px', borderRadius: '8px', fontSize: '12px', fontWeight: 'bold', color: '#1e40af' }}>🚿 Bagni/Docce</div>
           <div style={{ background: '#bfdbfe', padding: '8px 16px', borderRadius: '8px', fontSize: '12px', fontWeight: 'bold', color: '#1e40af' }}>🔌 Colonnine luce</div>
@@ -196,7 +183,6 @@ const MappaInterattiva = ({ onPiazzolaClick, refresh }) => {
         </div>
       </div>
 
-      {/* Tooltip */}
       {tooltip && (
         <div style={{
           position: 'fixed',

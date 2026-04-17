@@ -1,30 +1,32 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 
+const API_URL = process.env.REACT_APP_API_URL;
+
 const MapPiazzole = ({ onPiazzoleClick, refresh }) => {
   const [piazzole, setPiazzole] = useState([]);
   const [prenotazioni, setPrenotazioni] = useState([]);
-const caricaDati = useCallback(async () => {
-  try {
-    const [resPiazzole, resPrenotazioni] = await Promise.all([
-      axios.get('https://gestionale-agricampeggio-monaci-production.up.railway.app/api/piazzole'),
-      axios.get('https://gestionale-agricampeggio-monaci-production.up.railway.app/api/prenotazioni')
-    ]);
 
-    const ordinate = (resPiazzole.data || []).sort((a, b) => a.numero - b.numero);
-    setPiazzole(ordinate);
-    setPrenotazioni(resPrenotazioni.data || []);
+  const caricaDati = useCallback(async () => {
+    try {
+      const [resPiazzole, resPrenotazioni] = await Promise.all([
+        axios.get(`${API_URL}/api/piazzole`),
+        axios.get(`${API_URL}/api/prenotazioni`)
+      ]);
 
-  } catch (err) {
-    console.error('Errore caricamento:', err);
-  }
-}, []);
+      const ordinate = (resPiazzole.data || []).sort((a, b) => a.numero - b.numero);
+      setPiazzole(ordinate);
+      setPrenotazioni(resPrenotazioni.data || []);
+
+    } catch (err) {
+      console.error('Errore caricamento:', err);
+    }
+  }, []);
 
   useEffect(() => {
     caricaDati();
   }, [caricaDati, refresh]);
 
-  // 🔥 Stato della piazzola basato SOLO sulla prenotazione attiva oggi
   const getStato = (piazzolaId) => {
     const oggi = new Date().toISOString().split('T')[0];
 
@@ -57,11 +59,8 @@ const caricaDati = useCallback(async () => {
     }
   };
 
-  // 🔥 QUI LA MODIFICA FONDAMENTALE
   const handleClick = (piazzola) => {
     const stato = getStato(piazzola.id);
-
-    // Quando clicchi sulla piazzola → SEMPRE nuova prenotazione
     onPiazzoleClick(piazzola, null, stato);
   };
 
@@ -73,7 +72,6 @@ const caricaDati = useCallback(async () => {
   return (
     <div style={{ background: 'white', borderRadius: '8px', padding: '20px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
 
-      {/* Legenda */}
       <div style={{ display: 'flex', gap: '20px', marginBottom: '20px', flexWrap: 'wrap' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <div style={{ width: '20px', height: '20px', background: '#22c55e', borderRadius: '4px' }}></div>
@@ -89,7 +87,6 @@ const caricaDati = useCallback(async () => {
         </div>
       </div>
 
-      {/* Griglia piazzole */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '12px' }}>
         {piazzole.length === 0 ? (
           <p style={{ color: '#6b7280', gridColumn: '1/-1' }}>Nessuna piazzola trovata.</p>
@@ -127,7 +124,6 @@ const caricaDati = useCallback(async () => {
         )}
       </div>
 
-      {/* Riepilogo */}
       <div style={{ marginTop: '20px', padding: '12px', background: '#f3f4f6', borderRadius: '8px', display: 'flex', gap: '16px', flexWrap: 'wrap', fontSize: '14px' }}>
         <span>🟢 Libere: <strong>{libere}</strong></span>
         <span>🔴 Pagate: <strong>{occupate}</strong></span>
