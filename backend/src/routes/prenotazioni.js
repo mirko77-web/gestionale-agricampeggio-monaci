@@ -1,8 +1,11 @@
+const express = require('express');
+const router = express.Router();
+const db = require('../db/database.js');
+
 // PUT modifica prenotazione
 router.put('/:id', (req, res) => {
   const { piazzola_id, nome_cliente, telefono, email, data_arrivo, data_partenza, pagato, importo, note } = req.body;
 
-  // 1️⃣ Controllo sovrapposizioni ESCLUDENDO la prenotazione stessa
   const queryOverlap = `
     SELECT * FROM prenotazioni
     WHERE piazzola_id = ?
@@ -20,7 +23,6 @@ router.put('/:id', (req, res) => {
       return res.status(400).json({ error: "La piazzola è già occupata in queste date" });
     }
 
-    // 2️⃣ Nessuna sovrapposizione → aggiorna
     db.run(
       `UPDATE prenotazioni SET nome_cliente=?, telefono=?, email=?, data_arrivo=?, data_partenza=?, pagato=?, importo=?, note=? WHERE id=?`,
       [nome_cliente, telefono, email, data_arrivo, data_partenza, pagato ? 1 : 0, importo || 0, note, req.params.id],
@@ -35,3 +37,5 @@ router.put('/:id', (req, res) => {
     );
   });
 });
+
+module.exports = router;
