@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../db/database.js');
+const { inviaEmailPrenotazione } = require('../utils/email.js');
 
 // GET tutte le prenotazioni
 router.get('/', async (req, res) => {
@@ -11,8 +12,6 @@ router.get('/', async (req, res) => {
     res.status(500).json({ error: 'Errore nel caricamento' });
   }
 });
-
-// POST nuova prenotazione
 router.post('/', async (req, res) => {
   const { piazzola_id, nome_cliente, telefono, email, data_arrivo, data_partenza, pagato, importo, note } = req.body;
   try {
@@ -27,6 +26,19 @@ router.post('/', async (req, res) => {
       sql: `INSERT INTO prenotazioni (piazzola_id, nome_cliente, telefono, email, data_arrivo, data_partenza, pagato, importo, note) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       args: [piazzola_id, nome_cliente, telefono || '', email || '', data_arrivo, data_partenza, pagato ? 1 : 0, importo || 0, note || '']
     });
+
+    // Invia email di conferma al cliente
+    if (email) {
+      inviaEmailPrenotazione(email, {
+        nomeCliente: nome_cliente,
+        numeroPiazzola: piazzola_id,
+        dataArrivo: data_arrivo,
+        dataPartenza: data_partenza,
+        importo: importo,
+        pagato: pagato
+      }).catch(err => console.error('❌ Errore invio email:', err));
+    }
+
     res.json({ id: Number(result.lastInsertRowid), success: true });
   } catch (err) {
     console.error('❌ Errore POST:', err);
