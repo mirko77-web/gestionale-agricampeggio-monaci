@@ -48,8 +48,7 @@ function App() {
   if (loading) {
   return (
     <div className="loader-container">
-      <img src={camper} alt="Loading" className="loader-camper" />
-
+      <img src={logo} alt="Loading" className="loader-logo" />
       <p style={{ marginTop: 20, fontSize: 16, color: '#374151' }}>Caricamento...</p>
     </div>
   );
