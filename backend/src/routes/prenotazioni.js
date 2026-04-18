@@ -1,6 +1,30 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../db/database.js');
+// GET tutte le prenotazioni
+router.get('/', async (req, res) => {
+  try {
+    const { rows } = await db.execute('SELECT * FROM prenotazioni ORDER BY data_arrivo DESC');
+    res.json(rows);
+  } catch (err) {
+    console.error('❌ Errore GET prenotazioni:', err);
+    res.status(500).json({ error: 'Errore nel caricamento' });
+  }
+});
+
+// DELETE prenotazione
+router.delete('/:id', async (req, res) => {
+  try {
+    await db.execute({
+      sql: 'DELETE FROM prenotazioni WHERE id = ?',
+      args: [req.params.id]
+    });
+    res.json({ success: true });
+  } catch (err) {
+    console.error('❌ Errore DELETE:', err);
+    res.status(500).json({ error: "Errore nell'eliminazione" });
+  }
+});
 
 // PUT modifica prenotazione
 router.put('/:id', async (req, res) => {
