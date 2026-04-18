@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import CalendarioPrenotazioni from './components/CalendarioPrenotazioni';
 import FormPrenotazione from './components/FormPrenotazione';
 import MapPiazzole from './components/MapPiazzole';
@@ -9,9 +9,14 @@ function App() {
   const [selectedPiazzola, setSelectedPiazzola] = useState(null);
   const [selectedPrenotazione, setSelectedPrenotazione] = useState(null);
   const [selectedStato, setSelectedStato] = useState(null);
-
+  const [loading, setLoading] = useState(true);
   const [refreshMap, setRefreshMap] = useState(0);
   const [vistaAttiva, setVistaAttiva] = useState('piazzole');
+  
+  useEffect(() => {
+  const timer = setTimeout(() => setLoading(false), 1000);
+  return () => clearTimeout(timer);
+}, []);
 
   const handlePiazzolaClick = (piazzola, prenotazione, stato) => {
     setSelectedPiazzola(piazzola);
@@ -37,6 +42,15 @@ function App() {
     setSelectedPrenotazione(null);
     setSelectedStato(null);
   };
+
+  if (loading) {
+  return (
+    <div className="loader-container">
+      <img src={logo} alt="Loading" className="loader-logo" />
+      <p style={{ marginTop: 20, fontSize: 16, color: '#374151' }}>Caricamento...</p>
+    </div>
+  );
+}
 
   return (
     <div style={{ padding: '20px', background: '#f3f4f6', minHeight: '100vh' }}>
