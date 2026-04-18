@@ -92,37 +92,42 @@ function App() {
       {vistaAttiva === 'piazzole' && (
         <div style={{
           display: 'grid',
-          gridTemplateColumns: selectedPiazzola ? '2fr 1fr' : '1fr',
+          gridTemplateColumns: '1fr',
           gap: '20px'
         }}>
           <div>
             <h2 style={{ marginBottom: '12px' }}>Piazzole</h2>
             <MapPiazzole onPiazzoleClick={handlePiazzolaClick} refresh={refreshMap} />
           </div>
+        </div>
+      )}
 
-          {selectedPiazzola && (
-            <div>
-              <h2 style={{ marginBottom: '12px' }}>
-                {selectedStato === 'libera'
-                  ? '➕ Nuova prenotazione'
-                  : '📋 Dettaglio prenotazione'}
-              </h2>
+      {/* MODAL FORM PRENOTAZIONE */}
+      {selectedPiazzola && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <h2 style={{ marginBottom: '12px', textAlign: 'center' }}>
+              {selectedStato === 'libera'
+                ? '➕ Nuova prenotazione'
+                : '📋 Dettaglio prenotazione'}
+            </h2>
 
-              <FormPrenotazione
-                piazzola={selectedPiazzola}
-                prenotazioneEsistente={selectedPrenotazione}
-                stato={selectedStato}
-                onSave={handleSave}
-                onClose={handleClose}
-              />
-            </div>
-          )}
+            <FormPrenotazione
+              piazzola={selectedPiazzola}
+              prenotazioneEsistente={selectedPrenotazione}
+              stato={selectedStato}
+              onSave={handleSave}
+              onClose={handleClose}
+            />
+          </div>
         </div>
       )}
 
       {/* Vista Calendario */}
       {vistaAttiva === 'calendario' && (
-        <CalendarioPrenotazioni key={refreshMap} />
+        <div className="calendario-container">
+          <CalendarioPrenotazioni key={refreshMap} />
+        </div>
       )}
 
     </div>
