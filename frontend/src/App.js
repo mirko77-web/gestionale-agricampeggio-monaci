@@ -4,6 +4,8 @@ import FormPrenotazione from './components/FormPrenotazione';
 import MapPiazzole from './components/MapPiazzole';
 import logo from './Agricampeggio.png';
 import './App.css';
+import camper from './assets/camper.svg';
+
 
 function App() {
   const [selectedPiazzola, setSelectedPiazzola] = useState(null);
@@ -46,7 +48,8 @@ function App() {
   if (loading) {
   return (
     <div className="loader-container">
-      <img src={logo} alt="Loading" className="loader-logo" />
+      <img src={camper} alt="Loading" className="loader-camper" />
+
       <p style={{ marginTop: 20, fontSize: 16, color: '#374151' }}>Caricamento...</p>
     </div>
   );
