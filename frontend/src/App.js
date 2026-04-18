@@ -5,6 +5,8 @@ import MapPiazzole from './components/MapPiazzole';
 import logo from './Agricampeggio.png';
 import './App.css';
 import camper from './assets/camper.svg';
+import Statistiche from './components/Statistiche';
+
 
 
 function App() {
@@ -49,7 +51,7 @@ function App() {
   return (
     <div className="loader-container">
       <img src={logo} alt="Loading" className="loader-logo" />
-      <p style={{ marginTop: 20, fontSize: 16, color: '#374151' }}>Caricamento...</p>
+      <p style={{ marginTop: 20, fontSize: 16, color: '#374151' }}>Agricampeggio Monaci caricamento...</p>
     </div>
   );
 }
@@ -82,6 +84,8 @@ function App() {
         {[
           { id: 'piazzole', label: '🏕️ Piazzole' },
           { id: 'calendario', label: '📅 Calendario' },
+          { id: 'statistiche', label: '📊 Statistiche' },
+
         ].map(tab => (
           <button
             key={tab.id}
@@ -145,7 +149,10 @@ function App() {
           <CalendarioPrenotazioni key={refreshMap} />
         </div>
       )}
-
+{/* Vista Statistiche */}
+{vistaAttiva === 'statistiche' && (
+  <Statistiche />
+)}
     </div>
   );
 }
