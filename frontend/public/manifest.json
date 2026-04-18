@@ -3,12 +3,12 @@
   "name": "Gestionale Agricampeggio Monaci",
   "icons": [
     {
-      "src": "/192.PNG",
+      "src": "/192.png",
       "type": "image/png",
       "sizes": "192x192"
     },
     {
-      "src": "/512.PNG",
+      "src": "/512.png",
       "type": "image/png",
       "sizes": "512x512"
     }
