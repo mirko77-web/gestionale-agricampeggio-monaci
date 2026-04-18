@@ -16,7 +16,6 @@ const COLORS = {
 
 const GIORNI = ['Dom', 'Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab'];
 const MESI = ['Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno','Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'];
-const ORE = Array.from({ length: 14 }, (_, i) => i + 7);
 
 export default function CalendarioPrenotazioni() {
   const [vista, setVista] = useState('mese');
@@ -33,7 +32,6 @@ export default function CalendarioPrenotazioni() {
   const fetchPrenotazioni = () => {
     setLoading(true);
     setErrore(null);
-
     fetch(`${API_URL}/api/prenotazioni`, {
       headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
     })
@@ -42,7 +40,7 @@ export default function CalendarioPrenotazioni() {
         setPrenotazioni(Array.isArray(data) ? data : []);
         setLoading(false);
       })
-      .catch(err => {
+      .catch(() => {
         setErrore('Errore caricamento prenotazioni');
         setLoading(false);
       });
@@ -99,27 +97,22 @@ export default function CalendarioPrenotazioni() {
 
   const eliminaPrenotazione = async (id) => {
     if (!window.confirm('Sei sicuro di voler eliminare questa prenotazione?')) return;
-
     try {
       const res = await fetch(`${API_URL}/api/prenotazioni/${id}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
-
       if (res.ok) {
         setPrenotazioni(prev => prev.filter(p => p.id !== id));
-
         setPrenotazioneSelezionata(prev => {
           if (!prev) return null;
           const aggiornate = prev.prenotazioni.filter(p => p.id !== id);
           if (aggiornate.length === 0) return null;
           return { ...prev, prenotazioni: aggiornate };
         });
-
       } else {
         alert('Errore durante l\'eliminazione');
       }
-
     } catch {
       alert('Errore di connessione');
     }
@@ -140,10 +133,103 @@ export default function CalendarioPrenotazioni() {
     </div>
   );
 
+  const renderVistaMese = () => {
+    const anno = dataCorrente.getFullYear();
+    const mese = dataCorrente.getMonth();
+    const primoGiorno = new Date(anno, mese, 1).getDay();
+    const giorniNelMese = new Date(anno, mese + 1, 0).getDate();
+    const oggi = new Date();
+    const celle = [];
+    for (let i = 0; i < primoGiorno; i++) celle.push(null);
+    for (let i = 1; i <= giorniNelMese; i++) celle.push(new Date(anno, mese, i));
+    return (
+      <div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 2, marginBottom: 4 }}>
+          {GIORNI.map(g => (
+            <div key={g} style={{ textAlign: 'center', fontWeight: 700, fontSize: 12, color: COLORS.textLight, padding: '6px 0' }}>{g}</div>
+          ))}
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 2 }}>
+          {celle.map((giorno, idx) => {
+            if (!giorno) return <div key={idx} />;
+            const pren = prenotazioniDelGiorno(giorno);
+            const isOggi = isStessoGiorno(giorno, oggi);
+            return (
+              <div
+                key={idx}
+                onClick={() => pren.length > 0 && setPrenotazioneSelezionata({ giorno, prenotazioni: pren })}
+                style={{
+                  minHeight: 64, borderRadius: 6, padding: '6px 4px',
+                  background: isOggi ? '#ebf5fb' : COLORS.bg,
+                  border: `2px solid ${isOggi ? COLORS.today : COLORS.border}`,
+                  cursor: pren.length > 0 ? 'pointer' : 'default',
+                }}
+              >
+                <div style={{ fontWeight: 700, fontSize: 13, color: isOggi ? COLORS.today : COLORS.text, marginBottom: 4 }}>
+                  {giorno.getDate()}
+                </div>
+                {pren.slice(0, 2).map((p, i) => (
+                  <div key={i} style={{ fontSize: 10, background: COLORS.occupied, color: '#fff', borderRadius: 3, padding: '1px 4px', marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {p.nome_cliente}
+                  </div>
+                ))}
+                {pren.length > 2 && <div style={{ fontSize: 10, color: COLORS.textLight }}>+{pren.length - 2} altri</div>}
+              </div>
+            );
+          })}
+        </div>
+        <Legenda />
+      </div>
+    );
+  };
+
+  const renderVistaSettimana = () => {
+    const inizio = new Date(dataCorrente);
+    inizio.setDate(inizio.getDate() - inizio.getDay());
+    const giorni = Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(inizio);
+      d.setDate(inizio.getDate() + i);
+      return d;
+    });
+    const oggi = new Date();
+    return (
+      <div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 4 }}>
+          {giorni.map((giorno, idx) => {
+            const pren = prenotazioniDelGiorno(giorno);
+            const isOggi = isStessoGiorno(giorno, oggi);
+            return (
+              <div key={idx} style={{ borderRadius: 8, overflow: 'hidden', border: `2px solid ${isOggi ? COLORS.today : COLORS.border}` }}>
+                <div style={{ background: isOggi ? COLORS.today : COLORS.header, color: '#fff', textAlign: 'center', padding: '8px 4px' }}>
+                  <div style={{ fontSize: 11, fontWeight: 600 }}>{GIORNI[giorno.getDay()]}</div>
+                  <div style={{ fontSize: 20, fontWeight: 700 }}>{giorno.getDate()}</div>
+                </div>
+                <div style={{ background: COLORS.bg, minHeight: 120, padding: 4 }}>
+                  {pren.length === 0 ? (
+                    <div style={{ textAlign: 'center', color: COLORS.free, fontSize: 11, marginTop: 12 }}>Libero</div>
+                  ) : pren.map((p, i) => (
+                    <div
+                      key={i}
+                      onClick={() => setPrenotazioneSelezionata({ giorno, prenotazioni: pren })}
+                      style={{ fontSize: 11, background: COLORS.occupied, color: '#fff', borderRadius: 4, padding: '4px 6px', marginBottom: 4, cursor: 'pointer' }}
+                    >
+                      👤 {p.nome_cliente}<br />
+                      <span style={{ opacity: 0.8 }}>#{p.piazzola_id}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        <Legenda />
+      </div>
+    );
+  };
+
   const renderModale = () => {
     if (!prenotazioneSelezionata) return null;
     const { giorno, prenotazioni: prenSel } = prenotazioneSelezionata;
-
     return (
       <div
         style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}
@@ -159,29 +245,20 @@ export default function CalendarioPrenotazioni() {
             </h3>
             <button onClick={() => setPrenotazioneSelezionata(null)} style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: COLORS.textLight }}>✕</button>
           </div>
-
           <div style={{ fontSize: 13, color: COLORS.textLight, marginBottom: 12 }}>
             {prenSel.length} prenotazione{prenSel.length > 1 ? 'i' : ''} attiva{prenSel.length > 1 ? '' : ''}
           </div>
-
           {prenSel.map((p, idx) => (
             <div key={idx} style={{ background: COLORS.bg, borderRadius: 8, padding: 14, marginBottom: 10, borderLeft: `4px solid ${COLORS.occupied}` }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-                <div style={{ fontWeight: 700, fontSize: 16, color: COLORS.text }}>
-                  👤 {p.nome_cliente}
-                </div>
+                <div style={{ fontWeight: 700, fontSize: 16, color: COLORS.text }}>👤 {p.nome_cliente}</div>
                 <button
                   onClick={() => eliminaPrenotazione(p.id)}
-                  style={{
-                    background: '#e74c3c', color: 'white', border: 'none',
-                    borderRadius: 6, padding: '5px 12px', cursor: 'pointer',
-                    fontWeight: 700, fontSize: 12, display: 'flex', alignItems: 'center', gap: 4,
-                  }}
+                  style={{ background: '#e74c3c', color: 'white', border: 'none', borderRadius: 6, padding: '5px 12px', cursor: 'pointer', fontWeight: 700, fontSize: 12 }}
                 >
                   🗑️ Elimina
                 </button>
               </div>
-
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, fontSize: 13 }}>
                 <div><span style={{ color: COLORS.textLight }}>Piazzola:</span> <strong>#{p.piazzola_id}</strong></div>
                 <div><span style={{ color: COLORS.textLight }}>Arrivo:</span> <strong>{formataData(p.data_arrivo)}</strong></div>
@@ -190,11 +267,7 @@ export default function CalendarioPrenotazioni() {
                 {p.email && <div style={{ gridColumn: '1/-1' }}><span style={{ color: COLORS.textLight }}>Email:</span> <strong>{p.email}</strong></div>}
                 {p.importo != null && <div><span style={{ color: COLORS.textLight }}>Importo:</span> <strong>€{p.importo}</strong></div>}
                 <div>
-                  <span style={{
-                    display: 'inline-block', padding: '2px 10px', borderRadius: 12, fontSize: 11, fontWeight: 700,
-                    background: p.pagato ? '#27ae6022' : '#e74c3c22',
-                    color: p.pagato ? COLORS.free : COLORS.occupied,
-                  }}>
+                  <span style={{ display: 'inline-block', padding: '2px 10px', borderRadius: 12, fontSize: 11, fontWeight: 700, background: p.pagato ? '#27ae6022' : '#e74c3c22', color: p.pagato ? COLORS.free : COLORS.occupied }}>
                     {p.pagato ? '✓ Pagato' : '✗ Non pagato'}
                   </span>
                 </div>
@@ -220,7 +293,6 @@ export default function CalendarioPrenotazioni() {
           <button onClick={successivo} style={btnStyle}>›</button>
           <h2 style={{ margin: 0, fontSize: 17, color: COLORS.header }}>{titoloHeader()}</h2>
         </div>
-
         <div style={{ display: 'flex', gap: 4, background: '#f0f0f0', borderRadius: 8, padding: 3 }}>
           {['mese', 'settimana'].map(v => (
             <button key={v} onClick={() => setVista(v)} style={{
@@ -241,8 +313,7 @@ export default function CalendarioPrenotazioni() {
           <div style={{ textAlign: 'center', padding: 60, color: COLORS.textLight, fontSize: 16 }}>⏳ Caricamento...</div>
         ) : errore ? (
           <div style={{ textAlign: 'center', padding: 40, color: COLORS.occupied }}>
-            ❌ {errore}
-            <br /><br />
+            ❌ {errore}<br /><br />
             <button onClick={fetchPrenotazioni} style={{ ...btnStyle, fontSize: 13 }}>Riprova</button>
           </div>
         ) : vista === 'mese' ? renderVistaMese() : renderVistaSettimana()}
