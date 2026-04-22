@@ -11,16 +11,10 @@ const MappaInterattiva = ({ onPiazzolaClick, refresh }) => {
   const caricaDati = useCallback(async () => {
     try {
       const token = localStorage.getItem('token');
-
       const [resPiazzole, resPrenotazioni] = await Promise.all([
-        axios.get(`${API_URL}/api/piazzole`, {
-          headers: { Authorization: `Bearer ${token}` }
-        }),
-        axios.get(`${API_URL}/api/prenotazioni`, {
-          headers: { Authorization: `Bearer ${token}` }
-        })
+        axios.get(`${API_URL}/api/piazzole`, { headers: { Authorization: `Bearer ${token}` } }),
+        axios.get(`${API_URL}/api/prenotazioni`, { headers: { Authorization: `Bearer ${token}` } })
       ]);
-
       setPiazzole((resPiazzole.data || []).sort((a, b) => a.numero - b.numero));
       setPrenotazioni(resPrenotazioni.data || []);
     } catch (err) {
@@ -32,7 +26,6 @@ const MappaInterattiva = ({ onPiazzolaClick, refresh }) => {
     caricaDati();
   }, [caricaDati, refresh]);
 
-  // Normalizza data → 'YYYY-MM-DD' (gestisce ISO e formato SQLite)
   const toDay = (d) => {
     if (!d) return '';
     return String(d).split('T')[0].split(' ')[0];
@@ -40,12 +33,11 @@ const MappaInterattiva = ({ onPiazzolaClick, refresh }) => {
 
   const getPrenotazioneAttiva = (piazzolaId) => {
     const oggi = toDay(new Date().toISOString());
-
     return prenotazioni.find(p => {
-      if (p.piazzola_id !== piazzolaId) return false;
+      // FIX: Number() evita mismatch stringa/numero tra piazzola.id e p.piazzola_id
+      if (Number(p.piazzola_id) !== Number(piazzolaId)) return false;
       const start = toDay(p.data_arrivo);
       const end   = toDay(p.data_partenza);
-      // Attiva se oggi >= arrivo e oggi < partenza
       return oggi >= start && oggi < end;
     });
   };
@@ -66,19 +58,18 @@ const MappaInterattiva = ({ onPiazzolaClick, refresh }) => {
     }
   };
 
-  // 30 piazzole: 1-15 sinistra, 16-30 destra
   const piazzoleSinistra = piazzole.filter(p => p.numero >= 1  && p.numero <= 15);
   const piazzoleDestra   = piazzole.filter(p => p.numero >= 16 && p.numero <= 30);
 
   const handleClick = (piazzola) => {
-    const stato = getStato(piazzola.id);
+    const stato       = getStato(piazzola.id);
     const prenotazione = getPrenotazioneAttiva(piazzola.id);
     onPiazzolaClick(piazzola, prenotazione || null, stato);
   };
 
   const PiazzolaBox = ({ piazzola }) => {
-    const stato = getStato(piazzola.id);
-    const colore = getColore(stato);
+    const stato        = getStato(piazzola.id);
+    const colore       = getColore(stato);
     const prenotazione = getPrenotazioneAttiva(piazzola.id);
 
     return (
@@ -87,18 +78,12 @@ const MappaInterattiva = ({ onPiazzolaClick, refresh }) => {
         onMouseEnter={() => setTooltip({ piazzola, stato, prenotazione })}
         onMouseLeave={() => setTooltip(null)}
         style={{
-          background: colore,
-          color: 'white',
-          borderRadius: '8px',
-          padding: '8px 6px',
-          textAlign: 'center',
-          cursor: 'pointer',
-          fontWeight: 'bold',
-          fontSize: '13px',
+          background: colore, color: 'white', borderRadius: '8px',
+          padding: '8px 6px', textAlign: 'center', cursor: 'pointer',
+          fontWeight: 'bold', fontSize: '13px',
           boxShadow: '0 2px 6px rgba(0,0,0,0.2)',
           transition: 'transform 0.15s, box-shadow 0.15s',
-          userSelect: 'none',
-          minWidth: '58px',
+          userSelect: 'none', minWidth: '58px',
         }}
         onMouseOver={e => {
           e.currentTarget.style.transform = 'scale(1.08)';
@@ -133,20 +118,14 @@ const MappaInterattiva = ({ onPiazzolaClick, refresh }) => {
       </div>
 
       <div style={{
-        background: '#d1fae5',
-        borderRadius: '12px',
-        padding: '20px',
-        border: '2px solid #6ee7b7',
-        position: 'relative',
-        minHeight: '560px'
+        background: '#d1fae5', borderRadius: '12px', padding: '20px',
+        border: '2px solid #6ee7b7', position: 'relative', minHeight: '560px'
       }}>
         <div style={{ textAlign: 'center', marginBottom: '12px', color: '#065f46', fontWeight: 'bold', fontSize: '13px' }}>
           🚗 INGRESSO
         </div>
 
         <div style={{ display: 'flex', gap: '20px', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-
-          {/* FILA SINISTRA: piazzole 1-15 */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', flex: 1 }}>
             <div style={{ textAlign: 'center', fontSize: '12px', color: '#065f46', fontWeight: 'bold', marginBottom: '4px' }}>
               FILA SINISTRA (1–15)
@@ -154,34 +133,17 @@ const MappaInterattiva = ({ onPiazzolaClick, refresh }) => {
             {piazzoleSinistra.map(p => <PiazzolaBox key={p.id} piazzola={p} />)}
           </div>
 
-          {/* STRADA CENTRALE */}
-          <div style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            minWidth: '55px',
-          }}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minWidth: '55px' }}>
             <div style={{
-              background: '#fcd34d',
-              width: '38px',
-              flex: 1,
-              borderRadius: '4px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              writingMode: 'vertical-rl',
-              fontSize: '10px',
-              color: '#92400e',
-              fontWeight: 'bold',
-              letterSpacing: '2px',
-              minHeight: '400px'
+              background: '#fcd34d', width: '38px', flex: 1, borderRadius: '4px',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              writingMode: 'vertical-rl', fontSize: '10px', color: '#92400e',
+              fontWeight: 'bold', letterSpacing: '2px', minHeight: '400px'
             }}>
               STRADA
             </div>
           </div>
 
-          {/* FILA DESTRA: piazzole 16-30 */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', flex: 1 }}>
             <div style={{ textAlign: 'center', fontSize: '12px', color: '#065f46', fontWeight: 'bold', marginBottom: '4px' }}>
               FILA DESTRA (16–30)
@@ -199,17 +161,10 @@ const MappaInterattiva = ({ onPiazzolaClick, refresh }) => {
 
       {tooltip && (
         <div style={{
-          position: 'fixed',
-          bottom: '20px',
-          right: '20px',
-          background: '#1f2937',
-          color: 'white',
-          padding: '12px 16px',
-          borderRadius: '8px',
-          fontSize: '13px',
-          boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
-          zIndex: 1000,
-          minWidth: '200px'
+          position: 'fixed', bottom: '20px', right: '20px',
+          background: '#1f2937', color: 'white', padding: '12px 16px',
+          borderRadius: '8px', fontSize: '13px',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.3)', zIndex: 1000, minWidth: '200px'
         }}>
           <div style={{ fontWeight: 'bold', marginBottom: '6px' }}>Piazzola #{tooltip.piazzola.numero}</div>
           {tooltip.prenotazione ? (

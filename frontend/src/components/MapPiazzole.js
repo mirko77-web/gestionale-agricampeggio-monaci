@@ -13,7 +13,6 @@ const MapPiazzole = ({ onPiazzoleClick, refresh }) => {
         axios.get(`${API_URL}/api/piazzole`),
         axios.get(`${API_URL}/api/prenotazioni`)
       ]);
-
       const ordinate = (resPiazzole.data || []).sort((a, b) => a.numero - b.numero);
       setPiazzole(ordinate);
       setPrenotazioni(resPrenotazioni.data || []);
@@ -26,12 +25,19 @@ const MapPiazzole = ({ onPiazzoleClick, refresh }) => {
     caricaDati();
   }, [caricaDati, refresh]);
 
+  const toDay = (d) => {
+    if (!d) return '';
+    return String(d).split('T')[0].split(' ')[0];
+  };
+
   const getStato = (piazzolaId) => {
-    const oggi = new Date().toISOString().split('T')[0];
+    const oggi = toDay(new Date().toISOString());
 
     const attiva = prenotazioni.find(p =>
-      p.piazzola_id === piazzolaId &&
-     p.data_arrivo <= oggi && p.data_partenza > oggi
+      // FIX: Number() evita mismatch stringa/numero
+      Number(p.piazzola_id) === Number(piazzolaId) &&
+      toDay(p.data_arrivo) <= oggi &&
+      toDay(p.data_partenza) > oggi
     );
 
     if (!attiva) return 'libera';
@@ -41,19 +47,19 @@ const MapPiazzole = ({ onPiazzoleClick, refresh }) => {
 
   const getColore = (stato) => {
     switch (stato) {
-      case 'libera': return '#22c55e';
-      case 'occupata': return '#ef4444';
+      case 'libera':     return '#22c55e';
+      case 'occupata':   return '#ef4444';
       case 'non_pagata': return '#3b82f6';
-      default: return '#22c55e';
+      default:           return '#22c55e';
     }
   };
 
   const getEtichetta = (stato) => {
     switch (stato) {
-      case 'libera': return 'Libera';
-      case 'occupata': return 'Occupata ✓';
+      case 'libera':     return 'Libera';
+      case 'occupata':   return 'Occupata ✓';
       case 'non_pagata': return 'Non pagata ⚠️';
-      default: return 'Libera';
+      default:           return 'Libera';
     }
   };
 
@@ -62,26 +68,20 @@ const MapPiazzole = ({ onPiazzoleClick, refresh }) => {
     onPiazzoleClick(piazzola, null, stato);
   };
 
-  const libere = piazzole.filter(p => getStato(p.id) === 'libera').length;
-  const occupate = piazzole.filter(p => getStato(p.id) === 'occupata').length;
-  const nonPagate = piazzole.filter(p => getStato(p.id) === 'non_pagata').length;
+  const libere     = piazzole.filter(p => getStato(p.id) === 'libera').length;
+  const occupate   = piazzole.filter(p => getStato(p.id) === 'occupata').length;
+  const nonPagate  = piazzole.filter(p => getStato(p.id) === 'non_pagata').length;
   const totaleOccupate = occupate + nonPagate;
 
   return (
     <div style={{ background: 'white', borderRadius: '8px', padding: '20px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
       <div style={{ display: 'flex', gap: '20px', marginBottom: '20px', flexWrap: 'wrap' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <div style={{ width: '20px', height: '20px', background: '#22c55e', borderRadius: '4px' }}></div>
-          <span>Libera</span>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <div style={{ width: '20px', height: '20px', background: '#ef4444', borderRadius: '4px' }}></div>
-          <span>Occupata (pagata)</span>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <div style={{ width: '20px', height: '20px', background: '#3b82f6', borderRadius: '4px' }}></div>
-          <span>Occupata (non pagata)</span>
-        </div>
+        {[['#22c55e','Libera'],['#ef4444','Occupata (pagata)'],['#3b82f6','Occupata (non pagata)']].map(([col, label]) => (
+          <div key={label} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div style={{ width: '20px', height: '20px', background: col, borderRadius: '4px' }}></div>
+            <span>{label}</span>
+          </div>
+        ))}
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '12px' }}>
@@ -89,24 +89,19 @@ const MapPiazzole = ({ onPiazzoleClick, refresh }) => {
           <p style={{ color: '#6b7280', gridColumn: '1/-1' }}>Nessuna piazzola trovata.</p>
         ) : (
           piazzole.map(piazzola => {
-            const stato = getStato(piazzola.id);
+            const stato  = getStato(piazzola.id);
             const colore = getColore(stato);
             return (
               <div
                 key={piazzola.id}
                 onClick={() => handleClick(piazzola)}
                 style={{
-                  background: colore,
-                  color: 'white',
-                  padding: '16px 8px',
-                  borderRadius: '8px',
-                  textAlign: 'center',
-                  cursor: 'pointer',
-                  fontWeight: 'bold',
-                  fontSize: '16px',
+                  background: colore, color: 'white',
+                  padding: '16px 8px', borderRadius: '8px',
+                  textAlign: 'center', cursor: 'pointer',
+                  fontWeight: 'bold', fontSize: '16px',
                   boxShadow: '0 2px 4px rgba(0,0,0,0.15)',
-                  transition: 'transform 0.1s',
-                  userSelect: 'none',
+                  transition: 'transform 0.1s', userSelect: 'none',
                 }}
                 onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.05)'; }}
                 onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; }}
