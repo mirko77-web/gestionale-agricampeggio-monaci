@@ -57,15 +57,14 @@ export default function CalendarioPrenotazioni() {
     d1.getMonth() === d2.getMonth() &&
     d1.getDate() === d2.getDate();
 
-  const prenotazioniDelGiorno = (giorno) =>
-    prenotazioni.filter(p => {
-      const arrivo = toDate(p.data_arrivo);
-      const partenza = toDate(p.data_partenza);
-      if (!arrivo || !partenza) return false;
-      const g = new Date(giorno.getFullYear(), giorno.getMonth(), giorno.getDate());
-      return g >= arrivo && g <= partenza;
-    });
-
+ const prenotazioniDelGiorno = (giorno) =>
+  prenotazioni.filter(p => {
+    const arrivo = toDate(p.data_arrivo);
+    const partenza = toDate(p.data_partenza);
+    if (!arrivo || !partenza) return false;
+    const g = new Date(giorno.getFullYear(), giorno.getMonth(), giorno.getDate());
+    return g >= arrivo && g < partenza;
+  });
   const formataData = (str) => {
     if (!str) return '';
     const d = toDate(str);

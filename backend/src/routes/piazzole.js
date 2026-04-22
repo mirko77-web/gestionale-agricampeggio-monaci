@@ -20,10 +20,10 @@ router.get('/disponibili/:data', async (req, res) => {
 
   try {
     const { rows } = await db.execute({
-      sql: `SELECT p.* FROM piazzole p 
+      sql: `SELECT p.* FROM piazzole p
             WHERE p.id NOT IN (
-              SELECT DISTINCT piazzola_id FROM prenotazioni 
-              WHERE data_arrivo <= ? AND data_partenza >= ?
+              SELECT DISTINCT piazzola_id FROM prenotazioni
+              WHERE data_arrivo < ? AND data_partenza > ?
             )`,
       args: [data, data]
     });

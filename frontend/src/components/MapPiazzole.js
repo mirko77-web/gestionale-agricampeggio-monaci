@@ -17,7 +17,6 @@ const MapPiazzole = ({ onPiazzoleClick, refresh }) => {
       const ordinate = (resPiazzole.data || []).sort((a, b) => a.numero - b.numero);
       setPiazzole(ordinate);
       setPrenotazioni(resPrenotazioni.data || []);
-
     } catch (err) {
       console.error('Errore caricamento:', err);
     }
@@ -32,8 +31,7 @@ const MapPiazzole = ({ onPiazzoleClick, refresh }) => {
 
     const attiva = prenotazioni.find(p =>
       p.piazzola_id === piazzolaId &&
-      p.data_arrivo <= oggi &&
-      p.data_partenza >= oggi
+     p.data_arrivo <= oggi && p.data_partenza > oggi
     );
 
     if (!attiva) return 'libera';
@@ -71,7 +69,6 @@ const MapPiazzole = ({ onPiazzoleClick, refresh }) => {
 
   return (
     <div style={{ background: 'white', borderRadius: '8px', padding: '20px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
-
       <div style={{ display: 'flex', gap: '20px', marginBottom: '20px', flexWrap: 'wrap' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <div style={{ width: '20px', height: '20px', background: '#22c55e', borderRadius: '4px' }}></div>

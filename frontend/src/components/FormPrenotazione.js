@@ -4,7 +4,7 @@ import axios from 'axios';
 const API_URL = process.env.REACT_APP_API_URL;
 
 const FormPrenotazione = ({ piazzola, prenotazioneEsistente, stato, onSave, onClose }) => {
-  const oggi = new Date().toISOString().split('T')[0];
+  const oggi = new Date().toLocaleDateString('en-CA');
 
   const [form, setForm] = useState({
     nome_cliente: '',
@@ -19,7 +19,7 @@ const FormPrenotazione = ({ piazzola, prenotazioneEsistente, stato, onSave, onCl
   const isModifica = !!prenotazioneEsistente;
 
   useEffect(() => {
-    const oggi = new Date().toISOString().split("T")[0];
+    const oggi = new Date().toLocaleDateString('en-CA');
     if (prenotazioneEsistente) {
       setForm({
         nome_cliente: prenotazioneEsistente.nome_cliente || '',
@@ -32,6 +32,10 @@ const FormPrenotazione = ({ piazzola, prenotazioneEsistente, stato, onSave, onCl
       });
     }
   }, [prenotazioneEsistente]);
+  const cleanDate = (d) => {
+  if (!d) return '';
+  return d.split('T')[0];
+};
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -42,11 +46,16 @@ const FormPrenotazione = ({ piazzola, prenotazioneEsistente, stato, onSave, onCl
     try {
       const token = localStorage.getItem('token');
       const dati = {
-        piazzola_id: piazzola.id,
-        ...form,
-        pagato: form.pagato === true || form.pagato === 1 || form.pagato === '1' ? 1 : 0,
-        importo: 0
-      };
+  piazzola_id: piazzola.id,
+  nome_cliente: form.nome_cliente,
+  telefono: form.telefono,
+  email: form.email,
+  data_arrivo: cleanDate(form.data_arrivo),
+  data_partenza: cleanDate(form.data_partenza),
+  pagato: form.pagato === 1 ? 1 : 0,
+  importo: 0,
+  note: form.note
+};
 
       const API = `${API_URL}/api/prenotazioni`;
 
@@ -64,11 +73,15 @@ const FormPrenotazione = ({ piazzola, prenotazioneEsistente, stato, onSave, onCl
 
       onSave();
     } catch (err) {
-      alert('Errore nel salvataggio');
-      console.error(err);
-    }
-  };
+  console.error(err);
 
+  if (err.response && err.response.data && err.response.data.error) {
+    alert(err.response.data.error);
+  } else {
+    alert('Errore nel salvataggio');
+  }
+}
+  };
   const handleElimina = async () => {
     if (!window.confirm('Sei sicuro di voler eliminare questa prenotazione?')) return;
 
