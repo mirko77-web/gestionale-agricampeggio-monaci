@@ -12,6 +12,7 @@ const COLORS = {
   border: '#dfe6e9',
   text: '#2d3436',
   textLight: '#636e72',
+  departure: '#f39c12',   // colore per giorno di partenza/arrivo condiviso
 };
 
 const GIORNI = ['Dom', 'Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab'];
@@ -57,14 +58,25 @@ export default function CalendarioPrenotazioni() {
     d1.getMonth() === d2.getMonth() &&
     d1.getDate() === d2.getDate();
 
- const prenotazioniDelGiorno = (giorno) =>
-  prenotazioni.filter(p => {
-    const arrivo = toDate(p.data_arrivo);
-    const partenza = toDate(p.data_partenza);
-    if (!arrivo || !partenza) return false;
-    const g = new Date(giorno.getFullYear(), giorno.getMonth(), giorno.getDate());
-    return g >= arrivo && g < partenza;
-  });
+  // FIX: g <= partenza invece di g < partenza
+  // Così il giorno 15 mostra sia la prenotazione che finisce (1-15)
+  // che quella che inizia (15-20)
+  const prenotazioniDelGiorno = (giorno) =>
+    prenotazioni.filter(p => {
+      const arrivo   = toDate(p.data_arrivo);
+      const partenza = toDate(p.data_partenza);
+      if (!arrivo || !partenza) return false;
+      const g = new Date(giorno.getFullYear(), giorno.getMonth(), giorno.getDate());
+      return g >= arrivo && g <= partenza;
+    });
+
+  // Restituisce true se il giorno è esattamente partenza di almeno una prenotazione
+  const isGiornoPartenza = (giorno, prenDelGiorno) =>
+    prenDelGiorno.some(p => {
+      const partenza = toDate(p.data_partenza);
+      return partenza && isStessoGiorno(giorno, partenza);
+    });
+
   const formataData = (str) => {
     if (!str) return '';
     const d = toDate(str);
@@ -118,11 +130,12 @@ export default function CalendarioPrenotazioni() {
   };
 
   const Legenda = () => (
-    <div style={{ display: 'flex', gap: 20, marginTop: 16, justifyContent: 'center' }}>
+    <div style={{ display: 'flex', gap: 20, marginTop: 16, justifyContent: 'center', flexWrap: 'wrap' }}>
       {[
-        { colore: COLORS.free, label: 'Libero' },
-        { colore: COLORS.occupied, label: 'Occupato' },
-        { colore: COLORS.today, label: 'Oggi' },
+        { colore: COLORS.free,      label: 'Libero' },
+        { colore: COLORS.occupied,  label: 'Occupato' },
+        { colore: COLORS.departure, label: 'Partenza/Arrivo' },
+        { colore: COLORS.today,     label: 'Oggi' },
       ].map(({ colore, label }) => (
         <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13 }}>
           <div style={{ width: 12, height: 12, borderRadius: '50%', background: colore }} />
@@ -141,6 +154,7 @@ export default function CalendarioPrenotazioni() {
     const celle = [];
     for (let i = 0; i < primoGiorno; i++) celle.push(null);
     for (let i = 1; i <= giorniNelMese; i++) celle.push(new Date(anno, mese, i));
+
     return (
       <div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 2, marginBottom: 4 }}>
@@ -151,8 +165,10 @@ export default function CalendarioPrenotazioni() {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 2 }}>
           {celle.map((giorno, idx) => {
             if (!giorno) return <div key={idx} />;
-            const pren = prenotazioniDelGiorno(giorno);
-            const isOggi = isStessoGiorno(giorno, oggi);
+            const pren    = prenotazioniDelGiorno(giorno);
+            const isOggi  = isStessoGiorno(giorno, oggi);
+            const isPartenzaArrivo = isGiornoPartenza(giorno, pren) && pren.length > 1;
+
             return (
               <div
                 key={idx}
@@ -160,18 +176,27 @@ export default function CalendarioPrenotazioni() {
                 style={{
                   minHeight: 64, borderRadius: 6, padding: '6px 4px',
                   background: isOggi ? '#ebf5fb' : COLORS.bg,
-                  border: `2px solid ${isOggi ? COLORS.today : COLORS.border}`,
+                  border: `2px solid ${isOggi ? COLORS.today : isPartenzaArrivo ? COLORS.departure : COLORS.border}`,
                   cursor: pren.length > 0 ? 'pointer' : 'default',
                 }}
               >
                 <div style={{ fontWeight: 700, fontSize: 13, color: isOggi ? COLORS.today : COLORS.text, marginBottom: 4 }}>
                   {giorno.getDate()}
                 </div>
-                {pren.slice(0, 2).map((p, i) => (
-                  <div key={i} style={{ fontSize: 10, background: COLORS.occupied, color: '#fff', borderRadius: 3, padding: '1px 4px', marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {p.nome_cliente}
-                  </div>
-                ))}
+                {pren.slice(0, 2).map((p, i) => {
+                  const isPartenza = isStessoGiorno(giorno, toDate(p.data_partenza));
+                  return (
+                    <div key={i} style={{
+                      fontSize: 10,
+                      background: isPartenza ? COLORS.departure : COLORS.occupied,
+                      color: '#fff', borderRadius: 3,
+                      padding: '1px 4px', marginBottom: 2,
+                      overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'
+                    }}>
+                      {isPartenza ? '🚪' : '🏕️'} {p.nome_cliente}
+                    </div>
+                  );
+                })}
                 {pren.length > 2 && <div style={{ fontSize: 10, color: COLORS.textLight }}>+{pren.length - 2} altri</div>}
               </div>
             );
@@ -195,7 +220,7 @@ export default function CalendarioPrenotazioni() {
       <div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 4 }}>
           {giorni.map((giorno, idx) => {
-            const pren = prenotazioniDelGiorno(giorno);
+            const pren   = prenotazioniDelGiorno(giorno);
             const isOggi = isStessoGiorno(giorno, oggi);
             return (
               <div key={idx} style={{ borderRadius: 8, overflow: 'hidden', border: `2px solid ${isOggi ? COLORS.today : COLORS.border}` }}>
@@ -206,16 +231,24 @@ export default function CalendarioPrenotazioni() {
                 <div style={{ background: COLORS.bg, minHeight: 120, padding: 4 }}>
                   {pren.length === 0 ? (
                     <div style={{ textAlign: 'center', color: COLORS.free, fontSize: 11, marginTop: 12 }}>Libero</div>
-                  ) : pren.map((p, i) => (
-                    <div
-                      key={i}
-                      onClick={() => setPrenotazioneSelezionata({ giorno, prenotazioni: pren })}
-                      style={{ fontSize: 11, background: COLORS.occupied, color: '#fff', borderRadius: 4, padding: '4px 6px', marginBottom: 4, cursor: 'pointer' }}
-                    >
-                      👤 {p.nome_cliente}<br />
-                      <span style={{ opacity: 0.8 }}>#{p.piazzola_id}</span>
-                    </div>
-                  ))}
+                  ) : pren.map((p, i) => {
+                    const isPartenza = isStessoGiorno(giorno, toDate(p.data_partenza));
+                    return (
+                      <div
+                        key={i}
+                        onClick={() => setPrenotazioneSelezionata({ giorno, prenotazioni: pren })}
+                        style={{
+                          fontSize: 11,
+                          background: isPartenza ? COLORS.departure : COLORS.occupied,
+                          color: '#fff', borderRadius: 4,
+                          padding: '4px 6px', marginBottom: 4, cursor: 'pointer'
+                        }}
+                      >
+                        {isPartenza ? '🚪 Partenza' : '🏕️'} {p.nome_cliente}<br />
+                        <span style={{ opacity: 0.8 }}>#{p.piazzola_id}</span>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             );
@@ -245,35 +278,43 @@ export default function CalendarioPrenotazioni() {
             <button onClick={() => setPrenotazioneSelezionata(null)} style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: COLORS.textLight }}>✕</button>
           </div>
           <div style={{ fontSize: 13, color: COLORS.textLight, marginBottom: 12 }}>
-            {prenSel.length} prenotazione{prenSel.length > 1 ? 'i' : ''} attiva{prenSel.length > 1 ? '' : ''}
+            {prenSel.length} prenotazione{prenSel.length !== 1 ? 'i' : ''} in questo giorno
           </div>
-          {prenSel.map((p, idx) => (
-            <div key={idx} style={{ background: COLORS.bg, borderRadius: 8, padding: 14, marginBottom: 10, borderLeft: `4px solid ${COLORS.occupied}` }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-                <div style={{ fontWeight: 700, fontSize: 16, color: COLORS.text }}>👤 {p.nome_cliente}</div>
-                <button
-                  onClick={() => eliminaPrenotazione(p.id)}
-                  style={{ background: '#e74c3c', color: 'white', border: 'none', borderRadius: 6, padding: '5px 12px', cursor: 'pointer', fontWeight: 700, fontSize: 12 }}
-                >
-                  🗑️ Elimina
-                </button>
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, fontSize: 13 }}>
-                <div><span style={{ color: COLORS.textLight }}>Piazzola:</span> <strong>#{p.piazzola_id}</strong></div>
-                <div><span style={{ color: COLORS.textLight }}>Arrivo:</span> <strong>{formataData(p.data_arrivo)}</strong></div>
-                <div><span style={{ color: COLORS.textLight }}>Partenza:</span> <strong>{formataData(p.data_partenza)}</strong></div>
-                {p.telefono && <div><span style={{ color: COLORS.textLight }}>Tel:</span> <strong>{p.telefono}</strong></div>}
-                {p.email && <div style={{ gridColumn: '1/-1' }}><span style={{ color: COLORS.textLight }}>Email:</span> <strong>{p.email}</strong></div>}
-                {p.importo != null && <div><span style={{ color: COLORS.textLight }}>Importo:</span> <strong>€{p.importo}</strong></div>}
-                <div>
-                  <span style={{ display: 'inline-block', padding: '2px 10px', borderRadius: 12, fontSize: 11, fontWeight: 700, background: p.pagato ? '#27ae6022' : '#e74c3c22', color: p.pagato ? COLORS.free : COLORS.occupied }}>
-                    {p.pagato ? '✓ Pagato' : '✗ Non pagato'}
-                  </span>
+          {prenSel.map((p, idx) => {
+            const isPartenza = isStessoGiorno(giorno, toDate(p.data_partenza));
+            return (
+              <div key={idx} style={{
+                background: COLORS.bg, borderRadius: 8, padding: 14, marginBottom: 10,
+                borderLeft: `4px solid ${isPartenza ? COLORS.departure : COLORS.occupied}`
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                  <div style={{ fontWeight: 700, fontSize: 15, color: COLORS.text }}>
+                    {isPartenza ? '🚪 Partenza — ' : '🏕️ '}{p.nome_cliente}
+                  </div>
+                  <button
+                    onClick={() => eliminaPrenotazione(p.id)}
+                    style={{ background: '#e74c3c', color: 'white', border: 'none', borderRadius: 6, padding: '5px 12px', cursor: 'pointer', fontWeight: 700, fontSize: 12 }}
+                  >
+                    🗑️ Elimina
+                  </button>
                 </div>
-                {p.note && <div style={{ gridColumn: '1/-1' }}><span style={{ color: COLORS.textLight }}>Note:</span> {p.note}</div>}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, fontSize: 13 }}>
+                  <div><span style={{ color: COLORS.textLight }}>Piazzola:</span> <strong>#{p.piazzola_id}</strong></div>
+                  <div><span style={{ color: COLORS.textLight }}>Arrivo:</span> <strong>{formataData(p.data_arrivo)}</strong></div>
+                  <div><span style={{ color: COLORS.textLight }}>Partenza:</span> <strong>{formataData(p.data_partenza)}</strong></div>
+                  {p.telefono && <div><span style={{ color: COLORS.textLight }}>Tel:</span> <strong>{p.telefono}</strong></div>}
+                  {p.email && <div style={{ gridColumn: '1/-1' }}><span style={{ color: COLORS.textLight }}>Email:</span> <strong>{p.email}</strong></div>}
+                  {p.importo != null && <div><span style={{ color: COLORS.textLight }}>Importo:</span> <strong>€{p.importo}</strong></div>}
+                  <div>
+                    <span style={{ display: 'inline-block', padding: '2px 10px', borderRadius: 12, fontSize: 11, fontWeight: 700, background: p.pagato ? '#27ae6022' : '#e74c3c22', color: p.pagato ? COLORS.free : COLORS.occupied }}>
+                      {p.pagato ? '✓ Pagato' : '✗ Non pagato'}
+                    </span>
+                  </div>
+                  {p.note && <div style={{ gridColumn: '1/-1' }}><span style={{ color: COLORS.textLight }}>Note:</span> {p.note}</div>}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     );
