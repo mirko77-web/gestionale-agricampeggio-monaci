@@ -4,11 +4,13 @@ const db = require('../db/database.js');
 
 
 // =======================
-// UTILITY: NORMALIZZA DATA
+// UTILITY: NORMALIZZA DATA → 'YYYY-MM-DD'
+// Gestisce sia formato ISO (2024-05-10T00:00:00) che SQLite (2024-05-10 00:00:00)
 // =======================
-const toDay = (d) => new Date(d).toISOString().split('T')[0];
-
-const toTime = (d) => new Date(d).getTime();
+const toDay = (d) => {
+  if (!d) return '';
+  return String(d).split('T')[0].split(' ')[0];
+};
 
 
 // =======================
@@ -45,10 +47,10 @@ router.post('/', async (req, res) => {
   } = req.body;
 
   try {
-    const checkIn = toTime(data_arrivo);
-    const checkOut = toTime(data_partenza);
+    const checkIn  = toDay(data_arrivo);
+    const checkOut = toDay(data_partenza);
 
-    if (checkIn >= checkOut) {
+    if (!checkIn || !checkOut || checkIn >= checkOut) {
       return res.status(400).json({ error: 'Date non valide' });
     }
 
@@ -57,14 +59,16 @@ router.post('/', async (req, res) => {
       args: [piazzola_id]
     });
 
+    // Sovrapposizione: la nuova prenotazione si sovrappone solo se inizia PRIMA
+    // che l'altra finisca E finisce DOPO che l'altra inizia.
+    // Due prenotazioni adiacenti (es. 1-10 e 10-20) NON si sovrappongono
+    // perché checkIn < end → "10" < "10" → false ✅
     const overlap = rows.some(p => {
-      const start = toTime(p.data_arrivo);
-      const end = toTime(p.data_partenza);
-
+      const start = toDay(p.data_arrivo);
+      const end   = toDay(p.data_partenza);
       return checkIn < end && checkOut > start;
     });
 
-   
     if (overlap) {
       return res.status(400).json({
         error: 'La piazzola è già occupata in queste date'
@@ -82,8 +86,8 @@ router.post('/', async (req, res) => {
         nome_cliente,
         telefono || '',
         email || '',
-        data_arrivo,
-        data_partenza,
+        checkIn,
+        checkOut,
         pagato ? 1 : 0,
         importo || 0,
         note || ''
@@ -134,13 +138,14 @@ router.put('/:id', async (req, res) => {
   } = req.body;
 
   try {
-    const checkIn = toTime(data_arrivo);
-    const checkOut = toTime(data_partenza);
+    const checkIn  = toDay(data_arrivo);
+    const checkOut = toDay(data_partenza);
 
-    if (checkIn >= checkOut) {
+    if (!checkIn || !checkOut || checkIn >= checkOut) {
       return res.status(400).json({ error: 'Date non valide' });
     }
 
+    // Esclude la prenotazione corrente dal controllo sovrapposizione
     const { rows } = await db.execute({
       sql: `
         SELECT * FROM prenotazioni
@@ -150,17 +155,9 @@ router.put('/:id', async (req, res) => {
       args: [piazzola_id, req.params.id]
     });
 
-    console.log("NUOVA:", data_arrivo, data_partenza);
-
-    console.log("ESISTENTI:", rows.map(r => ({
-      arrivo: r.data_arrivo,
-      partenza: r.data_partenza
-    })));
-
     const overlap = rows.some(p => {
-      const start = toTime(p.data_arrivo);
-      const end = toTime(p.data_partenza);
-
+      const start = toDay(p.data_arrivo);
+      const end   = toDay(p.data_partenza);
       return checkIn < end && checkOut > start;
     });
 
@@ -187,8 +184,8 @@ router.put('/:id', async (req, res) => {
         nome_cliente,
         telefono || '',
         email || '',
-        data_arrivo,
-        data_partenza,
+        checkIn,
+        checkOut,
         pagato ? 1 : 0,
         importo || 0,
         note || '',
@@ -200,7 +197,7 @@ router.put('/:id', async (req, res) => {
 
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Errore nell’aggiornamento' });
+    res.status(500).json({ error: "Errore nell'aggiornamento" });
   }
 });
 

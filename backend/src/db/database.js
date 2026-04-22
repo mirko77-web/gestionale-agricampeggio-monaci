@@ -7,6 +7,9 @@ const db = createClient({
 });
 
 async function initDb() {
+  // ======================
+  // UTENTI
+  // ======================
   await db.execute(`
     CREATE TABLE IF NOT EXISTS utenti (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -17,6 +20,9 @@ async function initDb() {
     )
   `);
 
+  // ======================
+  // PIAZZOLE
+  // ======================
   await db.execute(`
     CREATE TABLE IF NOT EXISTS piazzole (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -27,6 +33,9 @@ async function initDb() {
     )
   `);
 
+  // ======================
+  // PRENOTAZIONI
+  // ======================
   await db.execute(`
     CREATE TABLE IF NOT EXISTS prenotazioni (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -46,32 +55,54 @@ async function initDb() {
 
   console.log('✅ Tabelle database verificate');
 
-  // Crea admin se non esiste
+  // ======================
+  // ADMIN (crea solo se non esiste)
+  // ======================
   const { rows } = await db.execute({
     sql: 'SELECT id FROM utenti WHERE username = ?',
     args: ['admin']
   });
+
   if (rows.length === 0) {
     const hashedPassword = await bcryptjs.hash('password', 10);
     await db.execute({
       sql: 'INSERT INTO utenti (username, password, nome) VALUES (?, ?, ?)',
       args: ['admin', hashedPassword, 'Amministratore']
     });
-    console.log('✅ Utente admin creato (password: password)');
+    console.log('✅ Utente admin creato');
   }
 
-  // Crea 20 piazzole se non esistono
-  const { rows: piazzoleRows } = await db.execute('SELECT COUNT(*) as count FROM piazzole');
-  if (piazzoleRows[0].count === 0) {
-    for (let i = 1; i <= 20; i++) {
-      const col = (i - 1) % 5;
-      const row = Math.floor((i - 1) / 5);
+  // ======================
+  // PIAZZOLE 1-30
+  // Se il DB è vuoto le crea; se ne ha già meno di 30 aggiunge quelle mancanti
+  // ======================
+  const { rows: countRows } = await db.execute(
+    'SELECT COUNT(*) as count FROM piazzole'
+  );
+  const count = Number(countRows[0].count);
+
+  if (count < 30) {
+    // Recupera i numeri già presenti per non creare duplicati
+    const { rows: esistenti } = await db.execute('SELECT numero FROM piazzole');
+    const numeriEsistenti = new Set(esistenti.map(r => r.numero));
+
+    for (let i = 1; i <= 30; i++) {
+      if (numeriEsistenti.has(i)) continue; // già presente, salta
+
+      // Layout: 15 sinistra, 15 destra, 2 colonne
+      const col = i <= 15 ? 0 : 1;
+      const row = i <= 15 ? (i - 1) : (i - 16);
+
       await db.execute({
-        sql: 'INSERT INTO piazzole (numero, posizione_x, posizione_y, tipo) VALUES (?, ?, ?, ?)',
-        args: [i, 50 + col * 100, 50 + row * 100, 'standard']
+        sql: `INSERT INTO piazzole (numero, posizione_x, posizione_y, tipo) VALUES (?, ?, ?, ?)`,
+        args: [i, 50 + col * 200, 50 + row * 80, 'standard']
       });
     }
-    console.log('✅ 20 piazzole create automaticamente');
+
+    const aggiunte = 30 - count;
+    console.log(`✅ ${aggiunte} piazzole aggiunte (totale: 30)`);
+  } else {
+    console.log(`ℹ️ Piazzole già presenti: ${count}`);
   }
 }
 

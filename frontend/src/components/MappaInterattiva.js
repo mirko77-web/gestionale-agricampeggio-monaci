@@ -32,13 +32,22 @@ const MappaInterattiva = ({ onPiazzolaClick, refresh }) => {
     caricaDati();
   }, [caricaDati, refresh]);
 
+  // Normalizza data → 'YYYY-MM-DD' (gestisce ISO e formato SQLite)
+  const toDay = (d) => {
+    if (!d) return '';
+    return String(d).split('T')[0].split(' ')[0];
+  };
+
   const getPrenotazioneAttiva = (piazzolaId) => {
-    const oggi = new Date().toISOString().split('T')[0];
-    return prenotazioni.find(p =>
-      p.piazzola_id === piazzolaId &&
-      p.data_arrivo <= oggi &&
-      p.data_partenza >= oggi
-    );
+    const oggi = toDay(new Date().toISOString());
+
+    return prenotazioni.find(p => {
+      if (p.piazzola_id !== piazzolaId) return false;
+      const start = toDay(p.data_arrivo);
+      const end   = toDay(p.data_partenza);
+      // Attiva se oggi >= arrivo e oggi < partenza
+      return oggi >= start && oggi < end;
+    });
   };
 
   const getStato = (piazzolaId) => {
@@ -50,15 +59,16 @@ const MappaInterattiva = ({ onPiazzolaClick, refresh }) => {
 
   const getColore = (stato) => {
     switch (stato) {
-      case 'libera': return '#22c55e';
-      case 'occupata': return '#ef4444';
+      case 'libera':     return '#22c55e';
+      case 'occupata':   return '#ef4444';
       case 'non_pagata': return '#3b82f6';
-      default: return '#22c55e';
+      default:           return '#22c55e';
     }
   };
 
-  const piazzoleSinistra = piazzole.filter(p => p.numero >= 1 && p.numero <= 10);
-  const piazzoleDestra = piazzole.filter(p => p.numero >= 11 && p.numero <= 20);
+  // 30 piazzole: 1-15 sinistra, 16-30 destra
+  const piazzoleSinistra = piazzole.filter(p => p.numero >= 1  && p.numero <= 15);
+  const piazzoleDestra   = piazzole.filter(p => p.numero >= 16 && p.numero <= 30);
 
   const handleClick = (piazzola) => {
     const stato = getStato(piazzola.id);
@@ -80,15 +90,15 @@ const MappaInterattiva = ({ onPiazzolaClick, refresh }) => {
           background: colore,
           color: 'white',
           borderRadius: '8px',
-          padding: '10px 6px',
+          padding: '8px 6px',
           textAlign: 'center',
           cursor: 'pointer',
           fontWeight: 'bold',
-          fontSize: '14px',
+          fontSize: '13px',
           boxShadow: '0 2px 6px rgba(0,0,0,0.2)',
           transition: 'transform 0.15s, box-shadow 0.15s',
           userSelect: 'none',
-          minWidth: '60px',
+          minWidth: '58px',
         }}
         onMouseOver={e => {
           e.currentTarget.style.transform = 'scale(1.08)';
@@ -100,9 +110,9 @@ const MappaInterattiva = ({ onPiazzolaClick, refresh }) => {
           setTooltip(null);
         }}
       >
-        <div style={{ fontSize: '18px' }}>🏕️</div>
+        <div style={{ fontSize: '16px' }}>🏕️</div>
         <div>#{piazzola.numero}</div>
-        <div style={{ fontSize: '10px', fontWeight: 'normal', marginTop: '2px', opacity: 0.9 }}>
+        <div style={{ fontSize: '9px', fontWeight: 'normal', marginTop: '2px', opacity: 0.9 }}>
           {stato === 'libera' ? 'Libera' : stato === 'occupata' ? 'Pagata' : 'Non pagata'}
         </div>
       </div>
@@ -128,49 +138,53 @@ const MappaInterattiva = ({ onPiazzolaClick, refresh }) => {
         padding: '20px',
         border: '2px solid #6ee7b7',
         position: 'relative',
-        minHeight: '420px'
+        minHeight: '560px'
       }}>
         <div style={{ textAlign: 'center', marginBottom: '12px', color: '#065f46', fontWeight: 'bold', fontSize: '13px' }}>
           🚗 INGRESSO
         </div>
 
         <div style={{ display: 'flex', gap: '20px', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', flex: 1 }}>
+
+          {/* FILA SINISTRA: piazzole 1-15 */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', flex: 1 }}>
             <div style={{ textAlign: 'center', fontSize: '12px', color: '#065f46', fontWeight: 'bold', marginBottom: '4px' }}>
-              FILA SINISTRA
+              FILA SINISTRA (1–15)
             </div>
             {piazzoleSinistra.map(p => <PiazzolaBox key={p.id} piazzola={p} />)}
           </div>
 
+          {/* STRADA CENTRALE */}
           <div style={{
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
-            minWidth: '60px',
+            minWidth: '55px',
           }}>
             <div style={{
               background: '#fcd34d',
-              width: '40px',
+              width: '38px',
               flex: 1,
               borderRadius: '4px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               writingMode: 'vertical-rl',
-              fontSize: '11px',
+              fontSize: '10px',
               color: '#92400e',
               fontWeight: 'bold',
               letterSpacing: '2px',
-              minHeight: '300px'
+              minHeight: '400px'
             }}>
               STRADA
             </div>
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', flex: 1 }}>
+          {/* FILA DESTRA: piazzole 16-30 */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', flex: 1 }}>
             <div style={{ textAlign: 'center', fontSize: '12px', color: '#065f46', fontWeight: 'bold', marginBottom: '4px' }}>
-              FILA DESTRA
+              FILA DESTRA (16–30)
             </div>
             {piazzoleDestra.map(p => <PiazzolaBox key={p.id} piazzola={p} />)}
           </div>
